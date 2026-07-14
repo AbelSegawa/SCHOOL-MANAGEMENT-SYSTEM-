@@ -1,216 +1,143 @@
-# School SMS Uganda — Full App Description
 
-## Overview
 
-**School SMS Uganda** is an Android school management app built for Ugandan primary and secondary schools. It runs **offline-first** on each phone with a local **SQLite** database, and uses **Supabase** for **multi-school** staff login, notices, marks, and staff chat so data from different schools does not mix. Staff get role-based menus, parents can use a simple portal, and **Gemini** powers online AI help with an offline fallback.
+### *SCHOOL SMS UGANDA*
+_Run Your Entire School From One Android Phone_
 
----
-
-## Target users
-
-| User | How they use the app |
-|------|----------------------|
-| **School admin** | Setup school (UNEB/EMIS), users, classes, students, backup, cloud registration |
-| **DOS** | Approve results, reports, notices, library, timetable, settings |
-| **Teachers** | Marks, attendance, view students (per permissions) |
-| **Bursar** | Finance, receipts (with admin) |
-| **Parents** | Portal: child marks/fees; notices; messages (local ADM + PIN style login possible) |
-| **Multiple schools** | Each school identified by **UNEB centre no** or **EMIS** → unique cloud `school_id` |
+#### *SHORT TAGLINE*
+*School SMS Uganda* — Manage Students, Fees, Attendance, Exams & Parent SMS. Built for Ugandan Primary + Secondary Schools.
 
 ---
 
-## Technical stack
+#### *WHAT IS SCHOOL SMS UGANDA?*
+*School SMS Uganda* is the smart school management app made for *Head Teachers, Admin, DOS, Teachers, Bursars, and Parents* in Uganda.
 
-- **Platform:** Android (Java), Material UI, navigation drawer with **card-style** menu items  
-- **Local data:** SQLite (`DatabaseHelper`), single access layer **`SchoolRepository`** (UI should not call `DatabaseHelper` directly)  
-- **Cloud:** Supabase REST + Auth (no OkHttp in sync layer — `HttpURLConnection` via `SupabaseHttp`)  
-- **AI:** `GeminiClient` with model fallback; optional user API key in prefs; `OfflineAiHelper` uses local DB summaries  
-- **Session:** `SessionManager` — user id, username, role, optional `school_id`, Supabase tokens  
-- **Entry:** `SplashActivity` → `LoginActivity` or `MainActivity`; `MainActivity` guards session  
+Ditch the books, Excel sheets, and expensive systems. Do everything from your Android phone.
 
----
-
-## Multi-school model (no data collision)
-
-1. **Cloud school id** is derived from profile:  
-   - `uneb_<code>` if UNEB is set (not placeholder `U0000`)  
-   - else `emis_<code>` if EMIS is set (not placeholder `EMIS`)  
-   - else default id from `AppConfig`  
-
-2. **Staff Supabase login** uses synthetic emails:  
-   `{school_id}__{username}@schoolsms.local`  
-   Same username in **School A** and **School B** is fine — different emails and `school_staff.school_id`.
-
-3. **Tables (Supabase):** `schools`, `school_staff` (plus your existing notices/marks/messages tables scoped by `school_id`).
-
-4. **New school:** “New school” tab → register school + admin in cloud → save profile locally → sign in.
-
-5. **Existing school / new device:** Login with **UNEB or EMIS** + staff username + password.
-
-6. **Admin adds staff:** Local `users` row + `StaffCloudSync.registerStaffMember` → Supabase Auth + `school_staff` for **current** `school_id` only.
+*Key Points:*
+1.  *100% Offline First*: Enter marks, fees, attendance even with no internet
+2.  *Cloud Sync Optional*: Link multiple staff phones to one school when you have data
+3.  *Built for Uganda*: UNEB, EMIS, UGX, D1-F9 Grading, P.1-S.6
+4.  *One-Time Payment*: *UGX 20,000 Lifetime* per device. No monthly fees. Ever.
 
 ---
 
-## Authentication flows
-
-### Staff (Supabase configured)
-
-- **Login:** School code + username + password → `SupabaseAuth.signIn` → role from `school_staff` → sync local user if missing → `SessionManager.login(id, user, role, schoolId, token, userId)`.
-- **Signup (first device):** School name, UNEB/EMIS, admin user/password → `StaffCloudSync.registerSchoolAndAdmin`.
-- **Offline fallback:** If Supabase not configured in `AppConfig`, verify against SQLite (`admin` / `admin123` seed, etc.).
-
-### Parents
-
-- Designed for **local** login (e.g. admission number + PIN); not required to use Supabase unless you extend it later.
-- **Parent portal** menu: child marks/fees, messages, notices.
-
-### Session
-
-- Logout clears session and opens `LoginActivity`.
-- `MainActivity` redirects to login if `SessionManager.isLoggedIn()` is false (`id > 0`).
+#### *WHO IS IT FOR?*
+- *Private + Government Schools*: P.1 - P.7, S.1 - S.6, Nursery
+- *Head Teachers/Admin*: Full control of school data + reports
+- *DOS/Teachers*: Fast mark entry + UNEB report cards
+- *Bursars*: Track fees, balances, and print receipts
+- *Parents*: Check child’s results, fees + receive school notices
 
 ---
 
-## Roles and permissions
+#### *MAIN FEATURES*
 
-Roles: **ADMIN**, **DOS**, **TEACHER**, **BURSAR**, **PARENT**.
+*1. SCHOOL SETUP*
+- Register with: School Name, UNEB Center No, EMIS, Phone, Address, Logo, Motto
+- Secure Staff Logins with Roles
+- Link all phones to 1 school using UNEB/EMIS
 
-- **`RolePermissions`** + `SessionManager` helpers (`isAdmin`, `isDos`, `isTeacher`, `isBursar`, `isParent`) control menu visibility and fragments.
-- Examples from your app:
-  - Finance: Bursar / Admin only (`access_denied_finance`).
-  - School profile: Admin edits; others may view only.
-  - Students: Admin full; teachers/DOS may view per rules.
-  - Marks lock in settings affects editing.
+*2. STUDENTS & CLASSES*
+- Add Learners: ADM No, Name, Class, Stream, DOB, Gender, Parent Phone, NIN
+- Fast Search + Promote + Transfer Students
+- Class Lists for Nursery to S.6 ready for printing
 
-Drawer shows **role** and **cloud school id** when logged in via Supabase.
+*3. FEES & FINANCE - UGX*
+- Set Fee Structure per Class per Term
+- Record Payments + Print Receipts
+- View Balances + Defaulters List
+- Send Fee Reminder SMS to Parents
 
----
+*4. ATTENDANCE*
+- Daily Attendance by Class in 30 seconds
+- Track Present, Absent, Late
+- Auto SMS Parents: "Your child was absent today"
 
-## Main features (by module)
+*5. ACADEMICS & REPORTS*
+- Enter: CAT1, CAT2, MID, END TERM, MOCK
+- Auto Grading: D1, D2, C3, C4, C5, C6, P7, P8, F9
+- DOS Approval + Lock Results after closing term
+- Generate *UNEB-Style PDF Report Cards*
+- Export Candidate List CSV for UNEB Upload
+- Performance Charts: Best Students, Best Subjects
 
-### Dashboard
-- Stats: students, teachers, attendance today, fees collected, etc.
-- Entry point after login.
+*6. COMMUNICATION*
+- *Bulk SMS*: Fees, Meetings, Holidays, Results to all parents
+- *In-App Notices*: Post and sync to all staff phones
+- *In-App Chat*: Talk to Staff/Parents without sharing WhatsApp numbers
 
-### School setup
-- Name, UNEB, EMIS, address, motto, phone.
-- Drives **cloud school id** for all sync.
+*7. AI ASSISTANT*
+Tap AI to: "Write a PTA Notice", "Summarize Term Results", "Draft Fee Reminder SMS"
 
-### Students, teachers, classes, subjects
-- CRUD (admin); soft-delete students.
-- UNEB flag on students for export.
-
-### Marks
-- CAT / EOT (and related assessments), grades via **`Grading`**.
-- Local save; **push/pull cloud** (`MarkCloudSync`) scoped by school.
-- DOS **approve results** for class/term.
-- Optional **marks locked** setting.
-
-### Attendance
-- Daily status per student; counts for dashboard and AI.
-- Automation: optional SMS when marked absent.
-
-### Finance (Bursar)
-- Class fees per term, payments, receipts text.
-- Fee debtors for reports and AI.
-
-### Reports
-- **UNEB CSV** export for registered candidates.
-
-### Report cards & receipts
-- Printable/shareable text built from DB.
-
-### SMS
-- Bulk SMS to parents (device `SEND_SMS` permission).
-
-### Terms
-- Academic terms; one **current** term for marks/fees.
-
-### Staff users
-- Admin adds staff: **local + Supabase** registration.
-- List: `username · role`.
-
-### Notices
-- Audience: ALL, PARENTS, TEACHERS, STAFF.
-- Local DB + **`NoticeCloudSync`** (pull, realtime listener) so all school phones see the same notices.
-
-### Messages
-- Staff/parent channels; cached in **`SchoolRepository`** (SharedPreferences), synced via **`MessageCloudSync`**.
-
-### Library
-- Books and loans (basic).
-
-### Timetable
-- Periods by class/teacher, conflicts (room/teacher), copy class, export text.
-
-### Promotions
-- Move students between classes (end of year).
-
-### Backup
-- Email/Drive backup and restore of SQLite DB.
-
-### Settings
-- Theme (light/dark/system), change password, delete student, automation toggles, lock marks.
-
-### AI
-- **Floating FAB** + bottom sheet “Quick AI”.
-- **Full-screen AI Assistant** with school context (`aiContextBlock`: attendance, debtors, counts, fees).
-- Online: Gemini; offline: rule-based answers from repository.
-
-### Share app
-- Install link helper for spreading APK to other school phones.
+*8. SECURITY*
+- Role-based login: Admin sees everything. Parents see only their child
+- Full Backup & Restore to SD Card/USB
+- One-Time Activation protects your data
 
 ---
 
-## UI / UX
+#### *HOW TO GET & ACTIVATE*
+*Step 1: Install*  
+Install *School SMS Uganda* on your Android phone.
 
-- Green-tinted backgrounds (`#E8F5E9`), **Material cards** for sections (`CardUi`).
-- **Premium list** pattern: FAB add, RecyclerView lists (students, users, etc.).
-- Drawer: **animated nav cards** (emoji, title, subtitle, colors).
-- Splash → login or main.
+*Step 2: Pay Once - Lifetime*  
+1. Send *UGX 20,000* to *+256 758 303 840* `MTN MoMo / Airtel Money` - `ABEL SSEGAWA`
+2. Copy the *Transaction ID* from payment SMS
+3. Open App → Paste TX ID → Tap `Submit & WhatsApp Admin`
+4. Send the auto message. Approval is instant once confirmed.
 
----
+*Step 3: Login*  
+Admin creates staff accounts. Parents login with `ADM No + PIN` from school.
 
-## Data architecture
-
-```
-UI (Fragments / Activities)
-        ↓
-SchoolRepository  ← messages cache, AI context, staff helpers, cloud id
-        ↓
-DatabaseHelper (SQLite)
-        +
-SupabaseHttp / SupabaseAuth / StaffCloudSync / NoticeCloudSync / MarkCloudSync / MessageCloudSync
-        ↓
-Supabase (per school_id)
-```
-
-- **Messages** intentionally not in SQLite — stored in repo prefs with dedup by `cloud_id`.
-- **Audit log** in SQLite for admin actions.
+*Already Paid?*  
+Tap `Already Paid? Login` with your registered account to restore on a new phone.
 
 ---
 
-## Configuration
+#### *PRICING*
+Item	Cost
+**Lifetime License per Device**	**UGX 20,000 One Time**
+Monthly Subscription	**FREE - 0 UGX**
+Parent SMS	**Your normal Airtime/SMS bundle**
+---
 
-- **`AppConfig`:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DEFAULT_SCHOOL_CLOUD_ID`, `isSupabaseConfigured()`.
-- **Gemini:** user-saved key in `AiPrefs` (unless you later hard-code built-in key).
-- **Internet** permission required for cloud and AI.
+#### *WHAT YOU NEED*
+- Android Phone 5.0+ with 2GB RAM
+- Internet: Only for activation + Cloud Sync
+- SIM Card: For sending SMS to parents
+- School UNEB + EMIS Number
 
 ---
 
-## Security notes (for operators)
+#### *WHY SCHOOLS CHOOSE US*
+1.  *Save Time*: Do in 5 minutes what took 2 days with books
+2.  *Save Money*: One payment. No yearly renewal
+3.  *Professional*: UNEB Reports + Receipts + Charts for PTA meetings
+4.  *Trusted*: Made in Uganda, for Ugandan Schools
+5.  *Support*: Real WhatsApp support when you need help
 
-- Anon key in the APK is normal for Supabase client apps; tighten **RLS** in production beyond “open” dev policies.
-- Staff passwords: hashed locally (`PasswordUtil`); Supabase holds auth passwords for cloud login.
-- Built-in API keys in APK can be extracted — rotate keys if exposed.
+---
+
+#### *SUPPORT & CONTACT*
+- *Payment & Activation*: WhatsApp *+256 758 303 840*
+- *Mo/Airtel*: *+256 758 303 840* - `ABEL SSEGAWA`
+- Send your *Transaction ID* if approval delays
 
 ---
 
-## Typical deployment story
+#### *PLAY STORE SHORT - 80 Words*
+School SMS Uganda is the complete school management app for Ugandan schools. Manage students, fees, attendance, exams, and send parent SMS from one Android phone. Supports UNEB, EMIS, UGX, and D1-F9 grading. Works offline. Admin, DOS, Teacher, Bursar, and Parent roles. One-time activation UGX 20,000 for lifetime use. Generate UNEB report cards and class lists in seconds. Perfect for Primary P.1-P.7 and Secondary S.1-S.6.
 
-1. Admin installs app on first phone → **New school** → real UNEB/EMIS → admin account.
-2. Same school on more phones → **Login** with same school code + staff users created under **Users**.
-3. Another school → different UNEB/EMIS → separate cloud partition.
-4. Notices/marks/messages sync when online; day-to-day teaching works offline.
+#### *WHATSAPP BROADCAST*
+🏫 *SCHOOL SMS UGANDA* - _Run Your School On Your Phone_
 
----
+✅ Students, Fees, Attendance, Exams, Reports  
+✅ UNEB + EMIS Ready | Works Offline  
+✅ SMS Parents Directly | AI Assistant Included  
+
+💰 *UGX 20,000 ONCE* = Lifetime. No Monthly Fees
+
+📲 Pay: *+256758303840* `ABEL SSEGAWA`  
+→ Enter TX ID in App → WhatsApp for Activation
+
+📞 Support: *+256758303840*
